@@ -152,7 +152,7 @@ export default function Home() {
                 variant="contained"
                 onClick={handleOpen}
             >
-                Add New Ingredients
+                Add New Item
             </Button>
             <Box border="1px solid #333">
                 <Box
