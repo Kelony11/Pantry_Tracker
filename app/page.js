@@ -133,10 +133,10 @@ export default function Home() {
             <TextField
                 label="Search item"
                 variant="outlined"
-                fullWidth
+                width="800px"
                 value={searchTerm}
                 onChange={(e) => set_Search_Term(e.target.value)}
-                sx={{ marginBottom: 2 }}
+                sx={{ marginBottom: 2, backgroundColor: 'white'}}
             />
             <Button 
                 variant="contained"
@@ -204,6 +204,11 @@ export default function Home() {
         </Box>
     );
 }
+
+
+
+
+
 
 
 // import Image from "";
