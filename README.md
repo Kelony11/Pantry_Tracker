@@ -9,7 +9,7 @@ This project is a website that keeps track of all your pantry items in an invent
 
 
 # SCREENSHOTS
-Web Page - <img width="1378" alt="Screenshot 2024-08-06 at 1 07 06 AM" src="https://github.com/user-attachments/assets/4954d256-bc77-4825-998b-2f4af683657a">
+Web Page - <img width="1157" alt="Screenshot 2024-08-06 at 1 36 42 AM" src="https://github.com/user-attachments/assets/d8575af6-d918-4bfb-844a-1941fb20c2d2">
 
 
 # TECHNICAL STACK 🧱
