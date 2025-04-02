@@ -17,10 +17,13 @@ export default function Home() {
         const docs = await getDocs(snapshot);
         const pantryList = [];
         docs.forEach((doc) => {
-            pantryList.push({
-                name: doc.id,
-                ...doc.data(),
-            });
+            // Skip NaN items
+            if (doc.id !== "NaN") {
+                pantryList.push({
+                    name: doc.id,
+                    ...doc.data(),
+                });
+            }
         });
       
         setPantry(pantryList);
@@ -28,12 +31,22 @@ export default function Home() {
     };
 
     const addItem = async (item) => {
-        const docRef = doc(collection(firestore, 'Pantry'), item);
+        // skip empty or NaN items
+        if (!item || item === "NaN") {
+            return;
+        }
+        
+        // convert to lowercase for storage (case-insensitive matching)
+        const normalizedItem = item.toLowerCase();
+        
+        const docRef = doc(collection(firestore, 'Pantry'), normalizedItem);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
             const { quantity } = docSnap.data();
-            await setDoc(docRef, { quantity: quantity + 1 });
+            // Handle NaN quantity
+            const currentQuantity = isNaN(quantity) ? 0 : quantity;
+            await setDoc(docRef, { quantity: currentQuantity + 1 });
         } else {
             await setDoc(docRef, { quantity: 1 });
         }
@@ -50,15 +63,23 @@ export default function Home() {
     }, [searchTerm, Pantry]);
 
     const removeItem = async (item) => {
+        // skips NaN items (avoids error)
+        if (!item || item === "NaN") {
+            return;
+        }
+        
         const docRef = doc(collection(firestore, 'Pantry'), item);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
             const { quantity } = docSnap.data();
-            if (quantity === 1) {
+            // Handle NaN quantity
+            const currentQuantity = isNaN(quantity) ? 1 : quantity;
+            
+            if (currentQuantity <= 1) {
                 await deleteDoc(docRef);
             } else {
-                await setDoc(docRef, { quantity: quantity - 1 });
+                await setDoc(docRef, { quantity: currentQuantity - 1 });
             }
         }
 
@@ -71,6 +92,12 @@ export default function Home() {
 
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
+
+    // Function to capitalize first letter
+    const formatItemName = (name) => {
+        if (!name) return "";
+        return name.charAt(0).toUpperCase() + name.slice(1);
+    };
 
     return (
         <Box
@@ -88,8 +115,9 @@ export default function Home() {
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat'
             }}
-        >
-            <Modal open={open} onClose={handleClose}>
+        >   
+            {/* Pop out when adding an item */}
+            <Modal open={open} onClose={handleClose}> 
                 <Box
                     position="absolute"
                     top="50%"
@@ -118,9 +146,13 @@ export default function Home() {
                         <Button
                             variant="outlined"
                             onClick={() => {
-                                addItem(itemName);
-                                setItemName('');
-                                handleClose();
+                                if (itemName.trim()) {
+                                    addItem(itemName);
+                                    setItemName('');
+                                    handleClose();
+                                } else {
+                                    alert("Please enter a valid item name");
+                                }
                             }}
                         >
                             Add
@@ -181,11 +213,11 @@ export default function Home() {
                             padding={5}
                         >
                             <Typography variant="h3" color="#333" textAlign="center">
-                                {name.charAt(0).toUpperCase() + name.slice(1)}
+                                {formatItemName(name)}
                             </Typography>
 
                             <Typography variant="h3" color="#333" textAlign="center">
-                                {quantity}
+                                {isNaN(quantity) ? 0 : quantity}
                             </Typography>
                             <Stack direction="row" spacing={2}>
                                 <Button
@@ -211,110 +243,90 @@ export default function Home() {
 
 
 
-// import Image from "";
+// 'use client'
+
 // import { useState, useEffect } from 'react';
-// import { firestore } from '@/firebase'
-// import { Box, Modal, Typography, Stack, TextField, Button } from '@mui/material'
-// import { collection, query, getDoc, getDocs, deleteDoc, setDoc, doc, } from "firebase/firestore";
+// import { firestore } from '@/firebase';
+// import { Box, Modal, Typography, Stack, TextField, Button } from '@mui/material';
+// import { collection, query, getDoc, getDocs, deleteDoc, setDoc, doc } from "firebase/firestore";
 
 // export default function Home() {
-//     const [Pantry, setPantry] = useState([])
-//     const [open, setOpen] = useState(false)
-//     const [filteredPantry, setFilteredPantry] = useState([]);
-//     const [searchTerm, setSearchTerm] = useState("");
-//     const [itemName, setItemName] = useState('')
+//     const [Pantry, setPantry] = useState([]);
+//     const [open, setOpen] = useState(false);
+//     const [filteredPantry, set_Filtered_Pantry] = useState([]);
+//     const [searchTerm, set_Search_Term] = useState("");
+//     const [itemName, setItemName] = useState('');
 
-   
 //     const updatePantry = async () => {
-//         const snapshot = query(collection(firestore, 'Pantry'))
-//         const docs = await getDocs(snapshot)
-//         const pantryList = []
+//         const snapshot = query(collection(firestore, 'Pantry'));
+//         const docs = await getDocs(snapshot);
+//         const pantryList = [];
 //         docs.forEach((doc) => {
 //             pantryList.push({
 //                 name: doc.id,
 //                 ...doc.data(),
-//             })
-//         })
-
-//         setPantry(pantryList)
-//         setFilteredPantry(pantryList)
-//     }
+//             });
+//         });
+      
+//         setPantry(pantryList);
+//         set_Filtered_Pantry(pantryList);
+//     };
 
 //     const addItem = async (item) => {
-//         const docRef = doc(collection(firestore, 'Pantry'), item)
-//         const docSnap = await getDoc(docRef)
+//         const docRef = doc(collection(firestore, 'Pantry'), item);
+//         const docSnap = await getDoc(docRef);
 
 //         if (docSnap.exists()) {
-//             const { quantity } = docSnap.data()
-//             await setDoc(docRef, { quantity: quantity + 1 })
+//             const { quantity } = docSnap.data();
+//             await setDoc(docRef, { quantity: quantity + 1 });
 //         } else {
-//             await setDoc(docRef, { quantity: 1 })
+//             await setDoc(docRef, { quantity: 1 });
 //         }
 
-//         await updatePantry()
-//     }
-
-//     // Searchbar function
-//     const SearchBar = () => {
-//       if (searchTerm.trim() === "") {
-//         setFilteredPantry(Pantry);
-//       } else {
-//         const searchResult = Pantry.filter((item) =>
-//           item.name.toLowerCase() === searchTerm.toLowerCase()
-//         );
-//         setFilteredPantry(searchResult);
-//       }
+//         await updatePantry();
 //     };
 
 //     useEffect(() => {
-//       setFilteredPantry(
-//         Pantry.filter((item) =>
-//           item.name.toLowerCase().includes(searchTerm.toLowerCase())
-//         )
-//       );
+//         set_Filtered_Pantry(
+//             Pantry.filter((item) =>
+//                 item.name.toLowerCase().includes(searchTerm.toLowerCase())
+//             )
+//         );
 //     }, [searchTerm, Pantry]);
 
-
 //     const removeItem = async (item) => {
-//         const docRef = doc(collection(firestore, 'Pantry'), item)
-//         const docSnap = await getDoc(docRef)
+//         const docRef = doc(collection(firestore, 'Pantry'), item);
+//         const docSnap = await getDoc(docRef);
 
 //         if (docSnap.exists()) {
-//             const { quantity } = docSnap.data()
+//             const { quantity } = docSnap.data();
 //             if (quantity === 1) {
-//                 await deleteDoc(docRef)
+//                 await deleteDoc(docRef);
 //             } else {
-//                 await setDoc(docRef, { quantity: quantity - 1 })
+//                 await setDoc(docRef, { quantity: quantity - 1 });
 //             }
 //         }
 
-//         await updatePantry()
-//     }
+//         await updatePantry();
+//     };
 
 //     useEffect(() => {
-//         updatePantry()
-//     }, [])
+//         updatePantry();
+//     }, []);
 
-//     const handleOpen = () => setOpen(true)
-//     const handleClose = () => setOpen(false)
+//     const handleOpen = () => setOpen(true);
+//     const handleClose = () => setOpen(false);
 
 //     return (
-//         <Box 
-//             width="1000w" 
-//             height="100vh" 
+//         <Box
+//             width="1000w"
+//             height="100vh"
 //             display="flex"
 //             bgcolor="white"
 //             flexDirection="column"
-//             justifyContent="center" 
+//             justifyContent="center"
 //             alignItems="center"
 //             gap={2}
-//             // width="1000w" 
-//             // height="100vh" 
-//             // display="flex"
-//             // flexDirection="column"
-//             // justifyContent="center" 
-//             // alignItems="center"
-//             // gap={2}
 //             sx={{
 //                 backgroundImage: "url('/pantry.jpg')",
 //                 backgroundSize: 'cover',
@@ -346,14 +358,14 @@ export default function Home() {
 //                             variant="outlined"
 //                             fullWidth
 //                             value={itemName}
-//                             onChange={ (e) => setItemName(e.target.value) }
+//                             onChange={(e) => setItemName(e.target.value)}
 //                         />
 //                         <Button
 //                             variant="outlined"
 //                             onClick={() => {
-//                                 addItem(itemName)
-//                                 setItemName('')
-//                                 handleClose()
+//                                 addItem(itemName);
+//                                 setItemName('');
+//                                 handleClose();
 //                             }}
 //                         >
 //                             Add
@@ -362,40 +374,47 @@ export default function Home() {
 //                 </Box>
 //             </Modal>
 
-//             {/* // UI for search field */}
+//             {/* UI for search field */}
 //             <TextField
-//               label="Search item"
-//               variant='outlined'
-//               fullWidth
-//               value={searchTerm}
-//               onChange={(e) => setSearchTerm(e.target.value)}
-//               sx={{ marginBottom: 2 }}
+//                 label="Search item"
+//                 variant="outlined"
+//                 width="800px"
+//                 value={searchTerm}
+//                 onChange={(e) => set_Search_Term(e.target.value)}
+//                 sx={{ marginBottom: 2, backgroundColor: 'white'}}
 //             />
-//             <Button variant="contained" onClick={SearchBar}>Search</Button>
 //             <Button 
 //                 variant="contained"
-//                 onClick={() => {
-//                     handleOpen()
-//                 }}
+//                 onClick={() => set_Filtered_Pantry(
+//                     Pantry.filter((item) =>
+//                         item.name.toLowerCase().includes(searchTerm.toLowerCase())
+//                     )
+//                 )}
+//             >
+//                 Search
+//             </Button>
+//             <Button 
+//                 variant="contained"
+//                 onClick={handleOpen}
 //             >
 //                 Add New Item
 //             </Button>
 //             <Box border="1px solid #333">
 //                 <Box
-//                     width="800px" 
-//                     height="100px" 
+//                     width="800px"
+//                     height="100px"
 //                     bgcolor="#ADD8E6"
 //                     display="flex"
 //                     alignItems="center"
 //                     justifyContent="center"
 //                 >
 //                     <Typography variant="h2" color="#333">
-//                         Pantry Items
+//                         Pantry Inventory
 //                     </Typography>
 //                 </Box>
-            
-//                 <Stack width="800px" height="300px" spacing={2} overflow="auto" sx = {{bgcolor: "#ffffff"}}>
-//                     {Pantry.map(({ name, quantity }) => (
+
+//                 <Stack width="800px" height="300px" spacing={2} overflow="auto" sx={{ bgcolor: "#ffffff" }}>
+//                     {filteredPantry.map(({ name, quantity }) => (
 //                         <Box
 //                             key={name}
 //                             width="100%"
@@ -403,31 +422,30 @@ export default function Home() {
 //                             display="flex"
 //                             alignItems="center"
 //                             justifyContent="space-between"
-//                             bgColor="#f0f0f0"
+//                             bgcolor="#f0f0f0"
 //                             padding={5}
 //                         >
-//                             <Typography variant="h3" color="#333" textAlign="center"> 
+//                             <Typography variant="h3" color="#333" textAlign="center">
 //                                 {name.charAt(0).toUpperCase() + name.slice(1)}
 //                             </Typography>
 
-//                             <Typography variant="h3" color="#333" textAlign="center"> 
+//                             <Typography variant="h3" color="#333" textAlign="center">
 //                                 {quantity}
 //                             </Typography>
 //                             <Stack direction="row" spacing={2}>
-//                                 <Button 
-//                                     varaint="contained" 
+//                                 <Button
+//                                     variant="contained"
 //                                     onClick={() => {
-//                                         removeItem(name)
+//                                         removeItem(name);
 //                                     }}
 //                                 >
 //                                     Remove
 //                                 </Button>
-//                             </Stack> 
+//                             </Stack>
 //                         </Box>
 //                     ))}
 //                 </Stack>
 //             </Box>
 //         </Box>
-//     )
+//     );
 // }
-
